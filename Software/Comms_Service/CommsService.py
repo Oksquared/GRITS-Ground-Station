@@ -24,7 +24,7 @@ class COMMSService:
     def start(self):
         """Start the service and send UDP packets in a loop."""
         self.running = True
-        logger.info(f"COMMSService started, sending UDP packets to {self.ip}:{self.port}")
+        logger.info(f"CommsService started, sending UDP packets to {self.ip}:{self.port}")
 
         while self.running:
             try:

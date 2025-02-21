@@ -4,6 +4,8 @@ import struct
 import time
 
 from config.service_config import CDH_IP, CDH_SEND_PORT, CDH_RECIEVE_PORT, COMMS_SEND_PORT, COMMS_RECIEVE_PORT
+from utils.CPU_monitor import CPUMonitor
+import pyfiglet
 
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
@@ -16,21 +18,38 @@ class CDHService:
         self.sock = None
         self.running = False
         self._setup_socket()
-
+        self.CPU_monitor = CPUMonitor()
     def _setup_socket(self):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.sock.bind((self.ip, self.port))
+            self.sock.settimeout(0.5)  # set a 0.5 second timeout
             # logger.info(f"CDHService listening on {self.ip}:{self.port}")
         except Exception as e:
             # logger.error(f"Error initializing socket: {e}")
             raise
-
+   
     def start(self):
         self.running = True
+        # ANSI escape codes for orange text (using color code 208) and reset
+        orange = "\033[38;5;208m"
+        reset = "\033[0m"
+
+        # Generate and print figlet text for "GRITS"
+        fig = pyfiglet.figlet_format("GRITS", font="banner")
+        print(f"{orange}{fig}{reset}")
+        print()
+        # Print the subtitle in smaller letters
+        print("Ground-Based Recording of Important Telemetry Stuff")
         # logger.info(f"CDHService started, listening on {self.ip}:{self.port}")
         while self.running:
             try:
+                print("______________________________________")
+                print("CPU Temperature: {:.2f}°C".format(self.CPU_monitor.get_temperature()))
+                print("CPU Frequency: {:.2f} MHz".format(self.CPU_monitor.get_frequency()))
+                print("CPU Voltage: {:.2f} V".format(self.CPU_monitor.get_voltage()))
+                print("CPU Load: {:.2f}%".format(self.CPU_monitor.get_cpu_load()))
+                
                 data, addr = self.sock.recvfrom(1024)
                 if data:
                     # logger.info(f"Received data from {addr}: {data}")
@@ -38,8 +57,9 @@ class CDHService:
             except Exception as e:
                 # logger.error(f"Error receiving data: {e}")
                 pass
+            
             time.sleep(0.01)
-
+            
     def _process_packet(self, data, addr):
         try:
             if len(data) < 4:
