@@ -1,0 +1,7 @@
+Added Component: Designator=R1(SCR0603F120R)
+Add Pin To Net: Unknown Pin: Pin *-27
+Add Pin To Net: Unknown Pin: Pin *-28
+Added Pin To Net: NetName=RS485_N Pin=R1-1
+Added Pin To Net: NetName=RS485_P Pin=R1-2
+Add Class Member: Failed to add class member : Component * Pi Hat Header
+Added Member To Class: ClassName=GRITS Pi Hat Member=Component R1 SCR0603F120R

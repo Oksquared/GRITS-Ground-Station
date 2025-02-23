@@ -1,0 +1,4 @@
+Added Component: Designator=J?(CONN_ESQ-120-33-T-D)
+Added Pin To Net: NetName=UART1_TX Pin=J?-27
+Added Pin To Net: NetName=UART1_RX Pin=J?-28
+Added Member To Class: ClassName=GRITS Pi Hat Member=Component J? Pi Hat Header

@@ -1,0 +1,5 @@
+Replace Part * Pi Hat Header in C:\Users\oksqu\OneDrive\Documents\GitHub\GRITS-Ground-Station\Hardware\GRITS Pi Hat.SchDoc with Pi Hat Header from GRITS Pi Hat.SchLib
+Replace Part C1 CL10A105KB8NNNC in C:\Users\oksqu\OneDrive\Documents\GitHub\GRITS-Ground-Station\Hardware\GRITS Pi Hat.SchDoc with CL10A105KB8NNNC from GRITS Pi Hat.SchLib
+Replace Part R1 SCR0603F120R in C:\Users\oksqu\OneDrive\Documents\GitHub\GRITS-Ground-Station\Hardware\GRITS Pi Hat.SchDoc with SCR0603F120R from GRITS Pi Hat.SchLib
+Update Managed Component U1 From CMP-04875-000034-1[THVD1500D] To CMP-04875-000034-1[THVD1500D] in GRITS Pi Hat.SchDoc
+Update Managed Component U2 From CMP-2000-05357-1[SM712.TCT] To CMP-2000-05357-1[SM712.TCT] in GRITS Pi Hat.SchDoc
