@@ -30,11 +30,33 @@ class CDHService:
     def _setup_socket(self):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            self.sock.bind((self.ip, self.port))
+            # Allow address reuse
+            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            
+            # Try to bind to the preferred port, if fails try alternate ports
+            try:
+                self.sock.bind((self.ip, self.port))
+            except socket.error as e:
+                if e.errno == 98:  # Address already in use
+                    print(f"Port {self.port} is in use, trying alternate port...")
+                    # Try the next few port numbers
+                    for port in range(self.port + 1, self.port + 10):
+                        try:
+                            self.sock.bind((self.ip, port))
+                            self.port = port  # Update the port number
+                            print(f"Successfully bound to port {port}")
+                            break
+                        except socket.error:
+                            continue
+                    else:
+                        raise Exception("Could not find an available port")
+                else:
+                    raise
+            
             self.sock.settimeout(0.5)  # set a 0.5 second timeout
-            # logger.info(f"CDHService listening on {self.ip}:{self.port}")
+            print(f"Socket bound to {self.ip}:{self.port}")
         except Exception as e:
-            # logger.error(f"Error initializing socket: {e}")
+            print(f"Error initializing socket: {e}")
             raise
    
     def _draw_static_ui(self):
@@ -221,14 +243,23 @@ class CDHService:
         
 
 if __name__ == "__main__":
+    print("Starting CDH Service...")
+    cdh_service = None
     try:
-
+        print("Initializing CDH Service...")
         cdh_service = CDHService()
+        print("Starting CDH Service main loop...")
         cdh_service.start()
     except KeyboardInterrupt:
+        print("\nKeyboard interrupt detected")
         pass
     except Exception as e:
-        # logger.error(f"Failed to start CDHService: {e}")
+        print(f"\nFailed to start CDHService: {e}")
+        import traceback
+        traceback.print_exc()
         pass
     finally:
-        cdh_service.stop()
+        print("Cleaning up...")
+        if cdh_service:
+            cdh_service.stop()
+        print("Done.")
