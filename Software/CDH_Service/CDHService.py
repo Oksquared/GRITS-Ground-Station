@@ -37,32 +37,136 @@ class CDHService:
             # logger.error(f"Error initializing socket: {e}")
             raise
    
+    def _draw_static_ui(self):
+        """Draw the static parts of the UI."""
+        print("\n" + "=" * 50)
+        print("\033[91mCDH SERVICE\033[0m - GRITS Ground Station")
+        print("=" * 50)
+        print("Ground-Based Recording of Important Telemetry Stuff")
+        print("-" * 50)
+        print("\nSystem Information (updates every second):\n")
+        print("CPU Temperature: {}")
+        print("CPU Frequency:   {}")
+        print("CPU Voltage:     {}")
+        print("CPU Load:        {}")
+        print("\n" + "-" * 50)
+        print(f"Listening on {self.ip}:{self.port} for incoming packets")
+        print("Press Ctrl+C to exit")
+        print("=" * 50)
+
+    def _update_dynamic_values(self):
+        """Update the dynamic values by redrawing the screen."""
+        try:
+            # Get system information with error handling
+            try:
+                temp = self.CPU_monitor.get_temperature()
+                temp_str = "{:.2f}°C".format(temp) if temp >= 0 else "N/A"
+            except:
+                temp_str = "N/A"
+                
+            try:
+                freq = self.CPU_monitor.get_frequency()
+                freq_str = "{:.2f} MHz".format(freq) if freq >= 0 else "N/A"
+            except:
+                freq_str = "N/A"
+                
+            try:
+                volt = self.CPU_monitor.get_voltage()
+                volt_str = "{:.2f} V".format(volt) if volt >= 0 else "N/A"
+            except:
+                volt_str = "N/A"
+                
+            try:
+                load = self.CPU_monitor.get_cpu_load()
+                load_str = "{:.2f}%".format(load) if load >= 0 else "N/A"
+            except:
+                load_str = "N/A"
+            
+            # Clear screen and redraw with current values
+            self.clear_console()
+            print("\n" + "=" * 50)
+            print("\033[91mCDH SERVICE\033[0m - GRITS Ground Station")
+            print("=" * 50)
+            print("Ground-Based Recording of Important Telemetry Stuff")
+            print("-" * 50)
+            print("\nSystem Information (updates every second):\n")
+            print(f"CPU Temperature: {temp_str}")
+            print(f"CPU Frequency:   {freq_str}")
+            print(f"CPU Voltage:     {volt_str}")
+            print(f"CPU Load:        {load_str}")
+            print("\n" + "-" * 50)
+            print(f"Listening on {self.ip}:{self.port} for incoming packets")
+            print("Press Ctrl+C to exit")
+            print("=" * 50)
+            
+        except Exception as e:
+            # Don't print errors to avoid cluttering the display
+            pass
+
     def start(self):
+        print("Starting CDHService...")
         self.running = True
+        
+        # Clear the console once at startup
         self.clear_console()
-        # logger.info(f"CDHService started, listening on {self.ip}:{self.port}")
+        
+        # Draw the static UI once
+        self._draw_static_ui()
+        
+        print(f"CDHService started, listening on {self.ip}:{self.port}")
+        
+        # Start the database logger if available
+        try:
+            # Comment out database logger start to prevent errors
+            # self.database_logger.start()
+            # print("Database logger started")
+            pass
+        except Exception as e:
+            print(f"Failed to start database logger: {e}")
+        
+        # Track time for controlled refresh rate
+        last_refresh_time = time.time()
+        refresh_interval = 1.0  # Refresh display once per second
+        
         while self.running:
             try:
-                self.print_to_console()
-                data, addr = self.sock.recvfrom(1024)
-                self.log_to_influxdb(self.port, addr[1], data, addr)
-                if data:
-                    # logger.info(f"Received data from {addr}: {data}")
-                    self._process_packet(data, addr)
-            except socket.timeout:
-                # logger.warning("Socket timeout, no data received")
-                continue
-            except socket.error as e:
-                # logger.error(f"Socket error: {e}")
+                # Only refresh the system info at controlled intervals
+                current_time = time.time()
+                if current_time - last_refresh_time >= refresh_interval:
+                    self._update_dynamic_values()
+                    last_refresh_time = current_time
+                
+                # Non-blocking socket receive with short timeout
+                try:
+                    self.sock.settimeout(0.1)  # Short timeout for responsive UI
+                    data, addr = self.sock.recvfrom(1024)
+                    if data:
+                        # Process the data outside the main display loop
+                        self._process_packet(data, addr)
+                        # Comment out InfluxDB logging to prevent errors
+                        # self.log_to_influxdb(self.port, addr[1], data, addr)
+                except socket.timeout:
+                    # This is expected, just continue
+                    pass
+                except socket.error as e:
+                    if not self.running:
+                        break
+                    # Don't break on transient socket errors
+                    time.sleep(0.5)
+                    continue
+                    
+            except KeyboardInterrupt:
+                print("\nKeyboard interrupt detected")
                 self.stop()
                 break
             except Exception as e:
-                # logger.error(f"Unexpected error: {e}")
-                self.stop()
-                break
+                print(f"\nUnexpected error in main loop: {e}")
+                # Don't break on other errors, try to continue
+                time.sleep(0.5)
             
+            # Short sleep to prevent CPU hogging
             time.sleep(0.1)
-            
+
     def _process_packet(self, data, addr):
         try:
             if len(data) < 4:
